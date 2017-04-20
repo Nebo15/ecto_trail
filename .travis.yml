@@ -1,0 +1,33 @@
+language: elixir
+
+cache:
+  directories:
+    - deps
+services:
+  - postgresql
+addons:
+  postgresql: "9.5"
+elixir:
+  - 1.4.2
+otp_release:
+  - 19.2
+env:
+  global:
+    - MIX_ENV=test
+    - DOCKER_HUB_ACCOUNT=place_your_account_name_here
+    - MAIN_BRANCHES="master develop staging" # Branches on which you want version to be incremented
+before_install:
+  # Expose MQ and DB to Docker container
+  - sudo ./bin/ci/init-db.sh
+script:
+  # Install dependencies
+  - mix deps.get
+  # Run all tests except pending ones
+  - mix test --exclude pending --trace
+  # Submit code coverage report to Coveralls
+  # Add --pro if you using private repo.
+  - mix coveralls.travis --exclude pending
+  # Run static code analysis
+  - mix credo --strict
+  # Check code style
+  - mix dogma
