@@ -128,10 +128,10 @@ defmodule EctoTrail do
     end
   end
 
-  defp get_changes(%Ecto.Changeset{changes: changes}),
+  defp get_changes(%Changeset{changes: changes}),
     do: changes
   defp get_changes(changes) when is_map(changes),
-    do: changes |> Ecto.Changeset.change(%{}) |> get_changes()
+    do: changes |> Changeset.change(%{}) |> get_changes()
   defp get_changes(nil),
     do: %{}
 
