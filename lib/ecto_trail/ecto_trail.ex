@@ -44,7 +44,7 @@ defmodule EctoTrail do
 
   5. Use logging functions instead of defaults. See `EctoTrail` module docs.
   """
-  import Ecto.Changeset
+  alias Ecto.Changeset
   alias EctoTrail.Changelog
   alias Ecto.Multi
   require Logger
@@ -148,7 +148,7 @@ defmodule EctoTrail do
 
   defp changelog_changeset(attrs) do
     %Changelog{}
-    |> cast(attrs, [
+    |> Changeset.cast(attrs, [
       :actor_id,
       :resource,
       :resource_id,

@@ -39,6 +39,27 @@ defmodule EctoTrailTest do
       } = TestRepo.one(Changelog)
     end
 
+    test "logs changes when changeset is empty" do
+      result =
+        %ResourcesSchema{}
+        |> Changeset.change(%{})
+        |> TestRepo.insert_and_log("cowboy")
+
+      assert {:ok, %ResourcesSchema{name: nil}} = result
+
+      resource = TestRepo.one(ResourcesSchema)
+      resource_id = to_string(resource.id)
+
+      assert %{
+        changeset: changes,
+        actor_id: "cowboy",
+        resource_id: ^resource_id,
+        resource: "resources"
+      } = TestRepo.one(Changelog)
+
+      assert %{} == changes
+    end
+
     test "logs changes when changeset with embed is inserted" do
       result =
         %ResourcesSchema{}
