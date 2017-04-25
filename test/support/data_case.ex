@@ -1,4 +1,4 @@
-defmodule ChangeLogger.DataCase do
+defmodule EctoTrail.DataCase do
   @moduledoc """
   This module defines the setup for tests requiring
   access to the application's data layer.
@@ -16,20 +16,20 @@ defmodule ChangeLogger.DataCase do
 
   using do
     quote do
-      alias ChangeLogger.Repo
+      alias TestRepo
 
       import Ecto
       import Ecto.Changeset
       import Ecto.Query
-      import ChangeLogger.DataCase
+      import EctoTrail.DataCase
     end
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(ChangeLogger.Repo)
+    :ok = Ecto.Adapters.SQL.Sandbox.checkout(TestRepo)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(ChangeLogger.Repo, {:shared, self()})
+      Ecto.Adapters.SQL.Sandbox.mode(TestRepo, {:shared, self()})
     end
 
     :ok

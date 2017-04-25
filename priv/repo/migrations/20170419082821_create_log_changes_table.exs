@@ -1,10 +1,11 @@
-defmodule ChangeLogger.Repo.Migrations.CreateLogChangesTable do
+defmodule EctoTrail.TestRepo.Migrations.CreateAuditLogTable do
+  @moduledoc false
   use Ecto.Migration
 
   def change do
-    create table(:log_changes, primary_key: false) do
+    create table(:audit_log, primary_key: false) do
       add :id, :uuid, primary_key: true
-      add :user_id, :string, null: false
+      add :actor_id, :string, null: false
       add :resource, :string, null: false
       add :resource_id, :string, null: false
       add :changeset, :map, null: false
