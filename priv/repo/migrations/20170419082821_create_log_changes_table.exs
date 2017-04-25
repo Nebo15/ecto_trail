@@ -7,7 +7,7 @@ defmodule ChangeLogger.Repo.Migrations.CreateLogChangesTable do
       add :user_id, :string, null: false
       add :resource, :string, null: false
       add :resource_id, :string, null: false
-      add :what_changed, :map, null: false
+      add :changeset, :map, null: false
 
       timestamps([type: :utc_datetime, updated_at: false])
     end

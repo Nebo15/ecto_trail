@@ -16,12 +16,33 @@ defmodule ChangeLogger do
     {:ok, Confex.process_env(config)}
   end
 
+  def insert(changeset, resource, user_id) do
+    {:ok, result} =
+      get_project_repo().transaction(fn ->
+        changeset
+        |> get_project_repo().insert()
+        |> save_changes(changeset, resource, user_id)
+      end)
+
+    result
+  end
+
+  def update(changeset, resource, user_id) do
+    {:ok, result} =
+      get_project_repo().transaction(fn ->
+        changeset
+        |> get_project_repo().update()
+        |> save_changes(changeset, resource, user_id)
+      end)
+    result
+  end
+
   def save_changes({:ok, result}, %Ecto.Changeset{valid?: true} = changeset, resource, user_id) do
     %{
       user_id: user_id,
       resource: resource,
       resource_id: result.id,
-      what_changed: changeset.changes
+      changeset: changeset.changes
     }
     |> log_changes_changeset()
     |> get_project_repo().insert()
@@ -53,13 +74,4 @@ defmodule ChangeLogger do
   defp get_project_repo() do
     Confex.get(:change_logger, :repo)
   end
-
-  def extract_object_name(module) do
-    module
-    |> to_string
-    |> String.split(".")
-    |> List.last
-    |> Macro.underscore
-  end
-
 end
