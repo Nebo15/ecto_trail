@@ -91,9 +91,7 @@ defmodule EctoTrail do
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new
     |> Multi.insert(:operation, struct_or_changeset, opts)
-    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
-    |> repo.transaction()
-    |> build_result()
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id)
   end
 
   @doc """
@@ -110,7 +108,12 @@ defmodule EctoTrail do
   def update_and_log(repo, changeset, actor_id, opts \\ []) do
     Multi.new
     |> Multi.update(:operation, changeset, opts)
-    |> Multi.run(:changelog, &log_changes(repo, &1, changeset, actor_id))
+    |> run_logging_transaction(repo, changeset, actor_id)
+  end
+
+  defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id) do
+    multi
+    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
     |> repo.transaction()
     |> build_result()
   end
