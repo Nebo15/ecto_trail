@@ -60,13 +60,8 @@ defmodule EctoTrail do
                            actor_id :: String.T,
                            opts :: Keyword.t) ::
             {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-      def insert_and_log(struct_or_changeset, actor_id, opts \\ []) do
-        Multi.new
-        |> Multi.insert(:operation, struct_or_changeset, opts)
-        |> Multi.run(:changelog, &EctoTrail.log_changes(__MODULE__, &1, struct_or_changeset, actor_id))
-        |> __MODULE__.transaction()
-        |> EctoTrail.build_result()
-      end
+      def insert_and_log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.insert_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
 
       @doc """
       Call `c:Ecto.Repo.update/2` operation and store changes in a `change_log` table.
@@ -78,31 +73,54 @@ defmodule EctoTrail do
                            opts :: Keyword.t) ::
             {:ok, Ecto.Schema.t} |
             {:error, Ecto.Changeset.t}
-      def update_and_log(%Ecto.Changeset{} = changeset, actor_id, opts \\ []) do
-        Multi.new
-        |> Multi.update(:operation, changeset, opts)
-        |> Multi.run(:changelog, &EctoTrail.log_changes(__MODULE__, &1, changeset, actor_id))
-        |> __MODULE__.transaction()
-        |> EctoTrail.build_result()
-      end
+      def update_and_log(changeset, actor_id, opts \\ []),
+        do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
     end
   end
 
-  @doc false
-  @spec build_result({:ok, changes :: Map.t} | {:error, :operation, changeset :: Ecto.Changeset.t}) ::
+  @doc """
+  Call `c:Ecto.Repo.insert/2` operation and store changes in a `change_log` table.
+
+  Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
+  """
+  @spec insert_and_log(repo :: Ecto.Repo.t,
+                       struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
+                       actor_id :: String.T,
+                       opts :: Keyword.t) ::
         {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
-  def build_result({:ok, %{operation: operation}}),
+  def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new
+    |> Multi.insert(:operation, struct_or_changeset, opts)
+    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
+    |> repo.transaction()
+    |> build_result()
+  end
+
+  @doc """
+  Call `c:Ecto.Repo.update/2` operation and store changes in a `change_log` table.
+
+  Insert arguments, return and options same as `c:Ecto.Repo.update/2` has.
+  """
+  @spec update_and_log(repo :: Ecto.Repo.t,
+                       changeset :: Ecto.Changeset.t,
+                       actor_id :: String.T,
+                       opts :: Keyword.t) ::
+        {:ok, Ecto.Schema.t} |
+        {:error, Ecto.Changeset.t}
+  def update_and_log(repo, changeset, actor_id, opts \\ []) do
+    Multi.new
+    |> Multi.update(:operation, changeset, opts)
+    |> Multi.run(:changelog, &log_changes(repo, &1, changeset, actor_id))
+    |> repo.transaction()
+    |> build_result()
+  end
+
+  defp build_result({:ok, %{operation: operation}}),
     do: {:ok, operation}
-  def build_result({:error, :operation, reason, _changes_so_far}),
+  defp build_result({:error, :operation, reason, _changes_so_far}),
     do: {:error, reason}
 
-  @doc false
-  @spec log_changes(repo :: Atom.t,
-                    multi_acc :: List.t,
-                    struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
-                    actor_id :: String.t) ::
-        {:ok, Ecto.Schema.t} | {:ok, Ecto.Changeset.t}
-  def log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
+  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
     %{operation: operation} = multi_acc
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
