@@ -132,8 +132,6 @@ defmodule EctoTrail do
     do: changes
   defp get_changes(changes) when is_map(changes),
     do: changes |> Changeset.change(%{}) |> get_changes()
-  defp get_changes(nil),
-    do: %{}
 
   defp get_embed_changes(changeset, embeds) do
     Enum.reduce(embeds, changeset, fn embed, changeset ->
@@ -147,8 +145,7 @@ defmodule EctoTrail do
   end
 
   defp changelog_changeset(attrs) do
-    %Changelog{}
-    |> Changeset.cast(attrs, [
+    Changeset.cast(%Changelog{}, attrs, [
       :actor_id,
       :resource,
       :resource_id,
