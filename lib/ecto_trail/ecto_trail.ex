@@ -125,9 +125,15 @@ defmodule EctoTrail do
 
   defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
     %{operation: operation} = multi_acc
+    associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
-    changes = struct_or_changeset |> get_changes() |> get_embed_changes(embeds)
+
+    changes =
+      struct_or_changeset
+      |> get_changes()
+      |> get_embed_changes(embeds)
+      |> get_assoc_changes(associations)
 
     result =
       %{
@@ -163,6 +169,17 @@ defmodule EctoTrail do
           changeset
         embed_changes ->
           Map.put(changeset, embed, get_changes(embed_changes))
+      end
+    end)
+  end
+
+  defp get_assoc_changes(changeset, assocciations) do
+    Enum.reduce(assocciations, changeset, fn assoc, changeset ->
+      case Map.get(changeset, assoc) do
+        nil ->
+          changeset
+        assoc_changes ->
+          Map.put(changeset, assoc, get_changes(assoc_changes))
       end
     end)
   end

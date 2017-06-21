@@ -14,6 +14,32 @@ defmodule TestRepo do
   use EctoTrail
 end
 
+defmodule Comment do
+  use Ecto.Schema
+
+  schema "comments" do
+    field :title, :string
+    belongs_to :resource, ResourcesSchema
+  end
+
+  def changeset(%Comment{} = schema, attrs) do
+    Ecto.Changeset.cast(schema, attrs, [:title])
+  end
+end
+
+defmodule Category do
+  use Ecto.Schema
+
+  schema "categories" do
+    field :title, :string
+    belongs_to :resource, ResourcesSchema
+  end
+
+  def changeset(%Category{} = schema, attrs) do
+    Ecto.Changeset.cast(schema, attrs, [:title])
+  end
+end
+
 defmodule ResourcesSchema do
   @moduledoc false
   use Ecto.Schema
@@ -29,6 +55,9 @@ defmodule ResourcesSchema do
     embeds_many :items, Item, primary_key: false do
       field :name, :string
     end
+
+    has_many :comments, Comment
+    has_one :category, {"categories", Category}, on_replace: :delete
 
     timestamps()
   end
