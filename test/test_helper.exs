@@ -26,12 +26,19 @@ defmodule ResourcesSchema do
       field :key2, :string
     end
 
+    embeds_many :items, Item, primary_key: false do
+      field :name, :string
+    end
+
     timestamps()
   end
 
   def embed_changeset(schema, attrs) do
-    schema
-    |> Ecto.Changeset.cast(attrs, [:key1, :key2])
+    Ecto.Changeset.cast(schema, attrs, [:key1, :key2])
+  end
+
+  def embeds_many_changeset(schema, attrs) do
+    Ecto.Changeset.cast(schema, attrs, [:name])
   end
 end
 

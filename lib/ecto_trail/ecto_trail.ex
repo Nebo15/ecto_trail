@@ -153,6 +153,8 @@ defmodule EctoTrail do
     do: changes
   defp get_changes(changes) when is_map(changes),
     do: changes |> Changeset.change(%{}) |> get_changes()
+  defp get_changes(changes) when is_list(changes),
+    do: changes |> Enum.map_reduce([], fn(ch, acc) -> {nil, List.insert_at(acc, -1, get_changes(ch))} end) |> elem(1)
 
   defp get_embed_changes(changeset, embeds) do
     Enum.reduce(embeds, changeset, fn embed, changeset ->

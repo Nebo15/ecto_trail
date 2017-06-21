@@ -61,10 +61,19 @@ defmodule EctoTrailTest do
     end
 
     test "logs changes when changeset with embed is inserted" do
+      attrs = %{
+        name: "My name",
+        data: %{key2: "key2"},
+        items: [
+          %{name: "Morgan"},
+          %{name: "Freeman"}
+        ]}
+
       result =
         %ResourcesSchema{}
-        |> Changeset.cast(%{name: "My name", data: %{key2: "key2"}}, [:name])
+        |> Changeset.cast(attrs, [:name])
         |> Changeset.cast_embed(:data, with: &ResourcesSchema.embed_changeset/2)
+        |> Changeset.cast_embed(:items, with: &ResourcesSchema.embeds_many_changeset/2)
         |> TestRepo.insert_and_log("cowboy")
 
       assert {:ok, %ResourcesSchema{name: "My name"}} = result
@@ -80,7 +89,10 @@ defmodule EctoTrailTest do
       } = TestRepo.one(Changelog)
 
 
-      assert %{"name" => "My name", "data" => %{"key2" => "key2"}} == changes
+      assert %{
+        "name" => "My name",
+        "data" => %{"key2" => "key2"},
+        "items" => [%{"name" => "Morgan"}, %{"name" => "Freeman"}]} == changes
     end
 
     test "returns error when changeset is invalid" do
