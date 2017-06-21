@@ -156,7 +156,7 @@ defmodule EctoTrail do
   end
 
   defp get_changes(%Changeset{changes: changes}),
-    do: changes
+    do: map_custom_ecto_types(changes)
   defp get_changes(changes) when is_map(changes),
     do: changes |> Changeset.change(%{}) |> get_changes()
   defp get_changes(changes) when is_list(changes),
@@ -183,6 +183,21 @@ defmodule EctoTrail do
       end
     end)
   end
+
+  defp map_custom_ecto_types(changes) do
+    changes |> Enum.map(&map_custom_ecto_type/1) |> Enum.into(%{})
+  end
+
+  defp map_custom_ecto_type({_field, %Ecto.Changeset{}} = input), do: input
+
+  defp map_custom_ecto_type({field, value}) when is_map(value) do
+    case Map.has_key?(value, :__struct__) do
+      true -> {field, inspect(value)}
+      false -> {field, value}
+    end
+  end
+
+  defp map_custom_ecto_type(value), do: value
 
   defp changelog_changeset(attrs) do
     Changeset.cast(%Changelog{}, attrs, [
