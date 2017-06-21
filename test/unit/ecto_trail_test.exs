@@ -64,6 +64,11 @@ defmodule EctoTrailTest do
       attrs = %{
         name: "My name",
         data: %{key2: "key2"},
+        category: %{"title" => "test"},
+        comments: [
+          %{"title" => "wow"},
+          %{"title" => "very impressive"},
+        ],
         items: [
           %{name: "Morgan"},
           %{name: "Freeman"}
@@ -74,6 +79,8 @@ defmodule EctoTrailTest do
         |> Changeset.cast(attrs, [:name])
         |> Changeset.cast_embed(:data, with: &ResourcesSchema.embed_changeset/2)
         |> Changeset.cast_embed(:items, with: &ResourcesSchema.embeds_many_changeset/2)
+        |> Changeset.cast_assoc(:category)
+        |> Changeset.cast_assoc(:comments)
         |> TestRepo.insert_and_log("cowboy")
 
       assert {:ok, %ResourcesSchema{name: "My name"}} = result
@@ -88,10 +95,14 @@ defmodule EctoTrailTest do
         resource: "resources"
       } = TestRepo.one(Changelog)
 
-
       assert %{
         "name" => "My name",
         "data" => %{"key2" => "key2"},
+        "category" => %{"title" => "test"},
+        "comments" => [
+          %{"title" => "wow"},
+          %{"title" => "very impressive"},
+        ],
         "items" => [%{"name" => "Morgan"}, %{"name" => "Freeman"}]} == changes
     end
 

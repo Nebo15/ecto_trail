@@ -125,15 +125,42 @@ defmodule EctoTrail do
 
   defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
     %{operation: operation} = multi_acc
+    associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
-    changes = struct_or_changeset |> get_changes() |> get_embed_changes(embeds)
+
+    changes =
+      struct_or_changeset
+      |> get_changes()
+      |> get_embed_changes(embeds)
+      |> get_assoc_changes(associations)
 
     result =
       %{
         actor_id: to_string(actor_id),
         resource: resource,
         resource_id: to_string(operation.id),
+        changeset: changes
+      }
+      |> changelog_changeset()
+      |> repo.insert()
+
+    case result do
+      {:ok, changelog} ->
+        {:ok, changelog}
+      {:error, reason} ->
+        Logger.error("Failed to store changes in audit log: #{inspect struct_or_changeset} " <>
+                     "by actor #{inspect actor_id}. Reason: #{inspect reason}")
+        {:ok, reason}
+    end
+  end
+
+  defp insert_audit_log(repo, actor_id, resource, resource_id, changes) do
+   result =
+      %{
+        actor_id: to_string(actor_id),
+        resource: resource,
+        resource_id: to_string(resource_id),
         changeset: changes
       }
       |> changelog_changeset()
@@ -163,6 +190,17 @@ defmodule EctoTrail do
           changeset
         embed_changes ->
           Map.put(changeset, embed, get_changes(embed_changes))
+      end
+    end)
+  end
+
+  defp get_assoc_changes(changeset, assocciations) do
+    Enum.reduce(assocciations, changeset, fn assoc, changeset ->
+      case Map.get(changeset, assoc) do
+        nil ->
+          changeset
+        assoc_changes ->
+          Map.put(changeset, assoc, get_changes(assoc_changes))
       end
     end)
   end
