@@ -155,27 +155,6 @@ defmodule EctoTrail do
     end
   end
 
-  defp insert_audit_log(repo, actor_id, resource, resource_id, changes) do
-   result =
-      %{
-        actor_id: to_string(actor_id),
-        resource: resource,
-        resource_id: to_string(resource_id),
-        changeset: changes
-      }
-      |> changelog_changeset()
-      |> repo.insert()
-
-    case result do
-      {:ok, changelog} ->
-        {:ok, changelog}
-      {:error, reason} ->
-        Logger.error("Failed to store changes in audit log: #{inspect struct_or_changeset} " <>
-                     "by actor #{inspect actor_id}. Reason: #{inspect reason}")
-        {:ok, reason}
-    end
-  end
-
   defp get_changes(%Changeset{changes: changes}),
     do: changes
   defp get_changes(changes) when is_map(changes),
