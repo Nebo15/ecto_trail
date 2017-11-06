@@ -7,6 +7,10 @@ services:
   - postgresql
 addons:
   postgresql: "9.5"
+  apt:
+    packages:
+      - postgresql-9.5-postgis-2.3
+
 elixir:
   - 1.4.2
 otp_release:
