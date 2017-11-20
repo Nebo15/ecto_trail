@@ -198,7 +198,7 @@ defmodule EctoTrailTest do
       assert [] == TestRepo.all(Changelog)
     end
 
-    defp insert_multiple_records() do
+    defp insert_multiple_records do
       {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
       {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
       {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
