@@ -75,6 +75,20 @@ defmodule EctoTrail do
             {:error, Ecto.Changeset.t}
       def update_and_log(changeset, actor_id, opts \\ []),
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
+
+      @doc """
+      Calls `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
+
+      Options are similar to `c:Ecto.Repo.update_all/3`, return is also similar in case of success
+      but in a case of an error this function returns {:error, changeset} tupple.
+      """
+      @spec update_all_and_log(changesets :: list(Ecto.Changeset.t),
+                           actor_id :: String.T,
+                           opts :: Keyword.t) ::
+            {non_neg_integer, nil} |
+            {:error, Ecto.Changeset.t}
+      def update_all_and_log(changesets, actor_id, opts \\ []),
+        do: EctoTrail.update_all_and_log(__MODULE__, changesets, actor_id, opts)
     end
   end
 
@@ -111,6 +125,37 @@ defmodule EctoTrail do
     |> run_logging_transaction(repo, changeset, actor_id)
   end
 
+  @doc """
+  Calls `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
+
+  Options are similar to `c:Ecto.Repo.update_all/3`, return is also similar in case of success
+  but in a case of an error this function returns {:error, changeset} tupple.
+  """
+  @spec update_all_and_log(repo :: Ecto.Repo.t,
+                           changesets :: list(Ecto.Changeset.t),
+                           actor_id :: String.T,
+                           opts :: Keyword.t) ::
+        {non_neg_integer, nil} |
+        {:error, Ecto.Changeset.t}
+  def update_all_and_log(repo, changesets, actor_id, opts \\ []) do
+    {multi, _} =
+      Enum.reduce(changesets, {Multi.new(), 0}, fn (changeset, {multi, i}) ->
+        op_name = "operation_#{i}"
+        log_name = "changelog_#{i}"
+
+        new_multi =
+            multi
+            |> Multi.update(op_name, changeset, opts)
+            |> Multi.run(log_name, &log_changes(repo, &1, changeset, actor_id, op_name))
+
+        {new_multi, i + 1}
+      end)
+
+    multi
+    |> repo.transaction()
+    |> build_results()
+  end
+
   defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id) do
     multi
     |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
@@ -123,8 +168,13 @@ defmodule EctoTrail do
   defp build_result({:error, :operation, reason, _changes_so_far}),
     do: {:error, reason}
 
-  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
-    %{operation: operation} = multi_acc
+  defp build_results({:ok, operations}),
+    do: {div(Enum.count(operations), 2), nil}
+  defp build_results({:error, _failed_operation, failed_value, _changes_so_far}),
+    do: {:error, failed_value}
+
+  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id, operation_name \\ :operation) do
+    %{^operation_name => operation} = multi_acc
     associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
