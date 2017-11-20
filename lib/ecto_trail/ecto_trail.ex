@@ -77,9 +77,10 @@ defmodule EctoTrail do
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
 
       @doc """
-      Call `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
+      Calls `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
 
-      Return and options are similar to `c:Ecto.Repo.update_all/3`.
+      Options are similar to `c:Ecto.Repo.update_all/3`, return is also similar in case of success
+      but in a case of an error this function returns {:error, changeset} tupple.
       """
       @spec update_all_and_log(changesets :: list(Ecto.Changeset.t),
                            actor_id :: String.T,
@@ -125,13 +126,15 @@ defmodule EctoTrail do
   end
 
   @doc """
-  Call `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
+  Calls `c:Ecto.Repo.update/2` operation for every changeset and store all changes in a `change_log` table.
 
-  Return and options are similar to `c:Ecto.Repo.update_all/3`.
+  Options are similar to `c:Ecto.Repo.update_all/3`, return is also similar in case of success
+  but in a case of an error this function returns {:error, changeset} tupple.
   """
-  @spec update_all_and_log(changesets :: list(Ecto.Changeset.t),
-                        actor_id :: String.T,
-                        opts :: Keyword.t) ::
+  @spec update_all_and_log(repo :: Ecto.Repo.t,
+                           changesets :: list(Ecto.Changeset.t),
+                           actor_id :: String.T,
+                           opts :: Keyword.t) ::
         {non_neg_integer, nil} |
         {:error, Ecto.Changeset.t}
   def update_all_and_log(repo, changesets, actor_id, opts \\ []) do
