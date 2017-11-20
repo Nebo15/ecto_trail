@@ -138,7 +138,7 @@ defmodule EctoTrailTest do
       {:ok, %{schema: schema}}
     end
 
-    test "logs changes when changeset is inserted", %{schema: schema} do
+    test "logs changes when changeset is updated", %{schema: schema} do
       result =
         schema
         |> Changeset.change(%{name: "My new name"})
@@ -168,6 +168,40 @@ defmodule EctoTrailTest do
 
       assert [%{name: "name"}] = TestRepo.all(ResourcesSchema)
       assert [] == TestRepo.all(Changelog)
+    end
+
+    test "log changes when mulpiple changesets are updated" do
+      insert_multiple_records()
+      names = TestRepo.all(from es in ResourcesSchema, where: es.name == "multi_name")
+      assert 3 == Enum.count(names)
+
+      changes = Enum.map(names, fn(name) -> Ecto.Changeset.change(name, %{name: "updated_name"}) end)
+      assert {3, nil} = TestRepo.update_all_and_log(changes, "cowboy")
+
+      changelog = TestRepo.all(from cl in Changelog, select: cl.changeset)
+      assert 3 == Enum.count(changelog)
+      assert Enum.all?(changelog, fn(%{"name" => updated}) -> updated == "updated_name" end)
+    end
+
+    test "returns error when some changeset from changesets is invalid" do
+      insert_multiple_records()
+      names = TestRepo.all(from es in ResourcesSchema, where: es.name == "multi_name")
+      assert 3 == Enum.count(names)
+
+      [ch1, ch2, ch3] = Enum.map(names, fn(name) -> Ecto.Changeset.change(name, %{name: "updated_name"}) end)
+      inv_ch = Changeset.add_error(ch2, :name, "invalid")
+      assert {:error, %Ecto.Changeset{}} = TestRepo.update_all_and_log([ch1, inv_ch, ch3], "cowboy")
+
+      orig_names = TestRepo.all(from es in ResourcesSchema, where: es.name == "multi_name", select: es.name)
+      assert 3 == Enum.count(orig_names)
+      assert Enum.all?(orig_names, &(&1 == "multi_name"))
+      assert [] == TestRepo.all(Changelog)
+    end
+
+    defp insert_multiple_records() do
+      {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
+      {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
+      {:ok, _} = TestRepo.insert(%ResourcesSchema{name: "multi_name"})
     end
   end
 end
