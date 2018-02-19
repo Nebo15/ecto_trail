@@ -50,8 +50,14 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
     use EctoTrail
   end
   ```
+  
+5. Configure table name which is used to store audit log (in `config.ex`):
 
-5. Use logging functions instead of defaults. See `EctoTrail` module docs.
+  ```elixir
+  config :ecto_trail, table_name: "audit_log"
+  ```
+
+6. Use logging functions instead of defaults. See `EctoTrail` module docs.
 
 ## Docs
 
