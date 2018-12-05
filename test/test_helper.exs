@@ -10,8 +10,6 @@ Application.put_env(:ex_unit, :capture_log, true)
 Application.put_env(:ecto_trail, TestRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "ecto_trail_test",
-  username: "postgres",
-  password: "postgres",
   hostname: "localhost",
   pool_size: 10,
   types: EHealth.PostgresTypes
