@@ -13,11 +13,11 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
     end
 
     test "logs changes when changeset is inserted" do
@@ -32,11 +32,11 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{"name" => "My name"},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{"name" => "My name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
     end
 
     test "logs changes when changeset is empty" do
@@ -51,11 +51,11 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: changes,
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: changes,
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
 
       assert %{} == changes
     end
@@ -70,12 +70,13 @@ defmodule EctoTrailTest do
         category: %{"title" => "test"},
         comments: [
           %{"title" => "wow"},
-          %{"title" => "very impressive"},
+          %{"title" => "very impressive"}
         ],
         items: [
           %{name: "Morgan"},
           %{name: "Freeman"}
-        ]}
+        ]
+      }
 
       result =
         %ResourcesSchema{}
@@ -92,30 +93,28 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: changes,
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: changes,
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
 
       assert %{
-        "name" => "My name",
-        "data" => %{"key2" => "key2"},
-        "category" => %{"title" => "test"},
-        "comments" => [
-          %{"title" => "wow"},
-          %{"title" => "very impressive"},
-        ],
-        "items" => [
-          %{"name" => "Morgan"},
-          %{"name" => "Freeman"}
-        ],
-        "location" => "%Geo.Point{coordinates: {49.44, 17.87}, srid: nil}",
-        "array" => ["apple", "banana"],
-        "map" => %{
-          "latitude" => 30.52333,
-          "longitude" => 50.45}
-        } == changes
+               "name" => "My name",
+               "data" => %{"key2" => "key2"},
+               "category" => %{"title" => "test"},
+               "comments" => [
+                 %{"title" => "wow"},
+                 %{"title" => "very impressive"}
+               ],
+               "items" => [
+                 %{"name" => "Morgan"},
+                 %{"name" => "Freeman"}
+               ],
+               "location" => "%Geo.Point{coordinates: {49.44, 17.87}, srid: nil}",
+               "array" => ["apple", "banana"],
+               "map" => %{"latitude" => 30.52333, "longitude" => 50.45}
+             } == changes
     end
 
     test "returns error when changeset is invalid" do
@@ -150,11 +149,11 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{"name" => "My new name"},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{"name" => "My new name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
     end
 
     test "returns error when changeset is invalid", %{schema: schema} do

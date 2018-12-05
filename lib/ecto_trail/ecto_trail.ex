@@ -56,10 +56,11 @@ defmodule EctoTrail do
 
       Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
       """
-      @spec insert_and_log(struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
-                           actor_id :: String.T,
-                           opts :: Keyword.t) ::
-            {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+      @spec insert_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
       def insert_and_log(struct_or_changeset, actor_id, opts \\ []),
         do: EctoTrail.insert_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
 
@@ -68,11 +69,13 @@ defmodule EctoTrail do
 
       Insert arguments, return and options same as `c:Ecto.Repo.update/2` has.
       """
-      @spec update_and_log(changeset :: Ecto.Changeset.t,
-                           actor_id :: String.T,
-                           opts :: Keyword.t) ::
-            {:ok, Ecto.Schema.t} |
-            {:error, Ecto.Changeset.t}
+      @spec update_and_log(
+              changeset :: Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
       def update_and_log(changeset, actor_id, opts \\ []),
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
     end
@@ -83,13 +86,14 @@ defmodule EctoTrail do
 
   Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
   """
-  @spec insert_and_log(repo :: Ecto.Repo.t,
-                       struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
-                       actor_id :: String.T,
-                       opts :: Keyword.t) ::
-        {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+  @spec insert_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
-    Multi.new
+    Multi.new()
     |> Multi.insert(:operation, struct_or_changeset, opts)
     |> run_logging_transaction(repo, struct_or_changeset, actor_id)
   end
@@ -99,14 +103,16 @@ defmodule EctoTrail do
 
   Insert arguments, return and options same as `c:Ecto.Repo.update/2` has.
   """
-  @spec update_and_log(repo :: Ecto.Repo.t,
-                       changeset :: Ecto.Changeset.t,
-                       actor_id :: String.T,
-                       opts :: Keyword.t) ::
-        {:ok, Ecto.Schema.t} |
-        {:error, Ecto.Changeset.t}
+  @spec update_and_log(
+          repo :: Ecto.Repo.t(),
+          changeset :: Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
   def update_and_log(repo, changeset, actor_id, opts \\ []) do
-    Multi.new
+    Multi.new()
     |> Multi.update(:operation, changeset, opts)
     |> run_logging_transaction(repo, changeset, actor_id)
   end
@@ -120,6 +126,7 @@ defmodule EctoTrail do
 
   defp build_result({:ok, %{operation: operation}}),
     do: {:ok, operation}
+
   defp build_result({:error, :operation, reason, _changes_so_far}),
     do: {:error, reason}
 
@@ -148,25 +155,35 @@ defmodule EctoTrail do
     case result do
       {:ok, changelog} ->
         {:ok, changelog}
+
       {:error, reason} ->
-        Logger.error("Failed to store changes in audit log: #{inspect struct_or_changeset} " <>
-                     "by actor #{inspect actor_id}. Reason: #{inspect reason}")
+        Logger.error(
+          "Failed to store changes in audit log: #{inspect(struct_or_changeset)} " <>
+            "by actor #{inspect(actor_id)}. Reason: #{inspect(reason)}"
+        )
+
         {:ok, reason}
     end
   end
 
   defp get_changes(%Changeset{changes: changes}),
     do: map_custom_ecto_types(changes)
+
   defp get_changes(changes) when is_map(changes),
     do: changes |> Changeset.change(%{}) |> get_changes()
+
   defp get_changes(changes) when is_list(changes),
-    do: changes |> Enum.map_reduce([], fn(ch, acc) -> {nil, List.insert_at(acc, -1, get_changes(ch))} end) |> elem(1)
+    do:
+      changes
+      |> Enum.map_reduce([], fn ch, acc -> {nil, List.insert_at(acc, -1, get_changes(ch))} end)
+      |> elem(1)
 
   defp get_embed_changes(changeset, embeds) do
     Enum.reduce(embeds, changeset, fn embed, changeset ->
       case Map.get(changeset, embed) do
         nil ->
           changeset
+
         embed_changes ->
           Map.put(changeset, embed, get_changes(embed_changes))
       end
@@ -178,6 +195,7 @@ defmodule EctoTrail do
       case Map.get(changeset, assoc) do
         nil ->
           changeset
+
         assoc_changes ->
           Map.put(changeset, assoc, get_changes(assoc_changes))
       end
@@ -204,7 +222,7 @@ defmodule EctoTrail do
       :actor_id,
       :resource,
       :resource_id,
-      :changeset,
+      :changeset
     ])
   end
 end
