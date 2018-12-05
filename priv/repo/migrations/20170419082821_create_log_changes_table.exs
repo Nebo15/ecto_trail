@@ -5,8 +5,7 @@ defmodule EctoTrail.TestRepo.Migrations.CreateAuditLogTable do
   @table_name String.to_atom(Application.fetch_env!(:ecto_trail, :table_name))
 
   def change(table_name \\ @table_name) do
-    create table(table_name, primary_key: false) do
-      add :id, :uuid, primary_key: true
+    create table(table_name) do
       add :actor_id, :string, null: false
       add :resource, :string, null: false
       add :resource_id, :string, null: false
