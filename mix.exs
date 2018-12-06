@@ -34,10 +34,10 @@ defmodule EctoTrail.Mixfile do
 
   defp deps do
     [
-      {:ecto, "~> 2.1"},
-      {:postgrex, "~> 0.13.2", optional: true},
+      {:ecto_sql, "~> 3.0"},
+      {:postgrex, ">= 0.14.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:geo, "~> 1.4", only: [:dev, :test]},
+      {:geo, "~> 3.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.5.0", only: [:dev, :test]},
       {:dogma, ">= 0.1.12", only: [:dev, :test]},
