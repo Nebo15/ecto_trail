@@ -78,6 +78,19 @@ defmodule EctoTrail do
               | {:error, Ecto.Changeset.t()}
       def update_and_log(changeset, actor_id, opts \\ []),
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
+
+      @doc """
+      Call `c:Ecto.Repo.delete/2` operation and store deleted objext in a `change_log` table.
+      """
+      @spec delete_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
+      def delete_and_log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.delete_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
     end
   end
 
@@ -95,7 +108,7 @@ defmodule EctoTrail do
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.insert(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 1)
   end
 
   @doc """
@@ -114,12 +127,29 @@ defmodule EctoTrail do
   def update_and_log(repo, changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.update(:operation, changeset, opts)
-    |> run_logging_transaction(repo, changeset, actor_id)
+    |> run_logging_transaction(repo, changeset, actor_id, 2)
   end
 
-  defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id) do
+  @doc """
+   Call `c:Ecto.Repo.delete/2` operation and store deleted objext in a `change_log` table.
+  """
+  @spec delete_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
+  def delete_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new()
+    |> Multi.delete(:operation, struct_or_changeset, opts)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 3)
+  end
+
+  defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id, operation_type) do
     multi
-    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
+    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id, operation_type))
     |> repo.transaction()
     |> build_result()
   end
@@ -130,7 +160,7 @@ defmodule EctoTrail do
   defp build_result({:error, :operation, reason, _changes_so_far}),
     do: {:error, reason}
 
-  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
+  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id, operation_type) do
     %{operation: operation} = multi_acc
     associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
@@ -141,6 +171,7 @@ defmodule EctoTrail do
       |> get_changes()
       |> get_embed_changes(embeds)
       |> get_assoc_changes(associations)
+      |> validate_changes(struct_or_changeset, operation_type)
 
     result =
       %{
@@ -164,6 +195,40 @@ defmodule EctoTrail do
 
         {:ok, reason}
     end
+  end
+
+  defp validate_changes(changes, schema, operation_type) do
+    case operation_type do
+      1 ->
+        # this case is entered when the operation type it's an insert operation
+        changes
+
+      2 ->
+        # this case is entered when the operation type it's an update operation
+        changes
+
+      3 ->
+        # this case is entered when the operation type it's a delete operation
+        {_, regreso} =
+          Map.from_struct(schema)
+          |> Map.pop(:__meta__)
+
+        IO.inspect(regreso)
+        remove_empty_assosiations(regreso)
+    end
+  end
+
+  defp remove_empty_assosiations(struct) do
+    new_struct =
+      Enum.map(struct, fn {key, value} ->
+        {key,
+         if String.contains?(Kernel.inspect(value), "Ecto.Association.NotLoaded") do
+           nil
+         else
+           value
+         end}
+      end)
+      |> Map.new()
   end
 
   defp get_changes(%Changeset{changes: changes}),
