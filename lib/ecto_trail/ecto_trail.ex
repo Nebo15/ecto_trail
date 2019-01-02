@@ -219,16 +219,15 @@ defmodule EctoTrail do
   end
 
   defp remove_empty_assosiations(struct) do
-    new_struct =
-      Enum.map(struct, fn {key, value} ->
-        {key,
-         if String.contains?(Kernel.inspect(value), "Ecto.Association.NotLoaded") do
-           nil
-         else
-           value
-         end}
-      end)
-      |> Map.new()
+    Enum.map(struct, fn {key, value} ->
+      {key,
+       if String.contains?(Kernel.inspect(value), "Ecto.Association.NotLoaded") do
+         nil
+       else
+         value
+       end}
+    end)
+    |> Map.new()
   end
 
   defp get_changes(%Changeset{changes: changes}),
