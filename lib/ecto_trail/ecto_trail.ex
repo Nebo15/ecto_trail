@@ -80,6 +80,21 @@ defmodule EctoTrail do
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
 
       @doc """
+      Call `c:Ecto.Repo.upsert/2` operation and store changes in a `change_log` table.
+
+      Insert arguments, return and options same as `c:Ecto.Repo.upsert/2` has.
+      """
+      @spec upsert_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
+      def upsert_and_log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.upsert_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
+
+      @doc """
       Call `c:Ecto.Repo.delete/2` operation and store deleted objext in a `change_log` table.
       """
       @spec delete_and_log(
@@ -128,6 +143,25 @@ defmodule EctoTrail do
     Multi.new()
     |> Multi.update(:operation, changeset, opts)
     |> run_logging_transaction(repo, changeset, actor_id, 2)
+  end
+
+  @doc """
+  Call `c:Ecto.Repo.upsert/2` operation and store changes in a `change_log` table.
+
+  Insert arguments, return and options same as `c:Ecto.Repo.upsert/2` has.
+  """
+  @spec upsert_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
+  def upsert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new()
+    |> Multi.insert_or_update(:operation, struct_or_changeset, opts)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 4)
   end
 
   @doc """
@@ -200,21 +234,24 @@ defmodule EctoTrail do
   defp validate_changes(changes, schema, operation_type) do
     case operation_type do
       1 ->
-        # this case is entered when the operation type it's an insert operation
+        # This case is true when the operation type is an insert operation.
         changes
 
       2 ->
-        # this case is entered when the operation type it's an update operation
+        # This case is true when the operation type is an update operation.
         changes
 
       3 ->
-        # this case is entered when the operation type it's a delete operation
-        {_, regreso} =
+        # This case is true when the operation type is an delete operation.
+        {_, return} =
           Map.from_struct(schema)
           |> Map.pop(:__meta__)
 
-        IO.inspect(regreso)
-        remove_empty_assosiations(regreso)
+        remove_empty_assosiations(return)
+
+      4 ->
+        # This case is true when the operation type is an upsert operation.
+        changes
     end
   end
 
