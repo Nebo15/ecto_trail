@@ -29,5 +29,3 @@ script:
   - mix coveralls.travis --exclude pending
   # Run static code analysis
   - mix credo --strict
-  # Check code style
-  - mix dogma
