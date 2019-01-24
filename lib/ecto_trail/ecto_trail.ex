@@ -123,7 +123,7 @@ defmodule EctoTrail do
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.insert(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 1)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :create)
   end
 
   @doc """
@@ -142,7 +142,7 @@ defmodule EctoTrail do
   def update_and_log(repo, changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.update(:operation, changeset, opts)
-    |> run_logging_transaction(repo, changeset, actor_id, 2)
+    |> run_logging_transaction(repo, changeset, actor_id, :update)
   end
 
   @doc """
@@ -161,7 +161,7 @@ defmodule EctoTrail do
   def upsert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.insert_or_update(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 4)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :upsert)
   end
 
   @doc """
@@ -178,7 +178,7 @@ defmodule EctoTrail do
   def delete_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.delete(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id, 3)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :delete)
   end
 
   defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id, operation_type) do
@@ -210,7 +210,8 @@ defmodule EctoTrail do
         actor_id: to_string(actor_id),
         resource: resource,
         resource_id: to_string(operation.id),
-        changeset: changes
+        changeset: changes,
+        change_type: operation_type
       }
       |> changelog_changeset()
       |> repo.insert()
@@ -231,15 +232,15 @@ defmodule EctoTrail do
 
   defp validate_changes(changes, schema, operation_type) do
     case operation_type do
-      1 ->
+      :create ->
         # This case is true when the operation type is an insert operation.
         changes
 
-      2 ->
+      :update ->
         # This case is true when the operation type is an update operation.
         changes
 
-      3 ->
+      :delete ->
         # This case is true when the operation type is an delete operation.
         {_, return} =
           Map.from_struct(schema)
@@ -247,7 +248,7 @@ defmodule EctoTrail do
 
         remove_empty_assosiations(return)
 
-      4 ->
+      :upsert ->
         # This case is true when the operation type is an upsert operation.
         changes
     end
@@ -321,7 +322,8 @@ defmodule EctoTrail do
       :actor_id,
       :resource,
       :resource_id,
-      :changeset
+      :changeset,
+      :change_type
     ])
   end
 end
