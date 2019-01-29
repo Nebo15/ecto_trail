@@ -65,7 +65,6 @@ defmodule EctoTrailTest do
         name: "My name",
         array: ["apple", "banana"],
         map: %{longitude: 50.45000, latitude: 30.52333},
-        location: %Geo.Point{coordinates: {49.44, 17.87}},
         data: %{key2: "key2"},
         category: %{"title" => "test"},
         comments: [
@@ -80,7 +79,7 @@ defmodule EctoTrailTest do
 
       result =
         %ResourcesSchema{}
-        |> Changeset.cast(attrs, [:name, :array, :map, :location])
+        |> Changeset.cast(attrs, [:name, :array, :map])
         |> Changeset.cast_embed(:data, with: &ResourcesSchema.embed_changeset/2)
         |> Changeset.cast_embed(:items, with: &ResourcesSchema.embeds_many_changeset/2)
         |> Changeset.cast_assoc(:category)
@@ -111,7 +110,6 @@ defmodule EctoTrailTest do
                  %{"name" => "Morgan"},
                  %{"name" => "Freeman"}
                ],
-               "location" => "%Geo.Point{coordinates: {49.44, 17.87}, srid: nil}",
                "array" => ["apple", "banana"],
                "map" => %{"latitude" => 30.52333, "longitude" => 50.45}
              } == changes

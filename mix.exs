@@ -1,7 +1,7 @@
 defmodule EctoTrail.Mixfile do
   use Mix.Project
 
-  @version "0.2.4"
+  @version "1.0.0"
 
   def project do
     [
@@ -15,8 +15,6 @@ defmodule EctoTrail.Mixfile do
       build_embedded: Mix.env() == :prod,
       start_permanent: Mix.env() == :prod,
       deps: deps(),
-      test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [coveralls: :test],
       docs: [source_ref: "v#\{@version\}", main: "readme", extras: ["README.md"]]
     ]
   end
@@ -46,10 +44,10 @@ defmodule EctoTrail.Mixfile do
 
   defp package do
     [
-      contributors: ["Nebo #15"],
-      maintainers: ["Nebo #15"],
-      licenses: ["LISENSE.md"],
-      links: %{github: "https://github.com/Nebo15/ecto_trail"},
+      contributors: ["Valiot, Nebo #15"],
+      maintainers: ["Valiot"],
+      licenses: ["LICENSE.md"],
+      links: %{github: "https://github.com/Valiot/ecto_trail"},
       files: ~w(lib LICENSE.md mix.exs README.md)
     ]
   end

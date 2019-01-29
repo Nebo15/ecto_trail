@@ -1,18 +1,10 @@
-# Enable PostGIS for Ecto
-Postgrex.Types.define(
-  EHealth.PostgresTypes,
-  [Geo.PostGIS.Extension] ++ Ecto.Adapters.Postgres.extensions(),
-  json: Poison
-)
-
 Application.put_env(:ex_unit, :capture_log, true)
 
 Application.put_env(:ecto_trail, TestRepo,
   pool: Ecto.Adapters.SQL.Sandbox,
   database: "ecto_trail_test",
   hostname: "localhost",
-  pool_size: 10,
-  types: EHealth.PostgresTypes
+  pool_size: 10
 )
 
 defmodule TestRepo do
@@ -57,7 +49,6 @@ defmodule ResourcesSchema do
     field(:name, :string)
     field(:array, {:array, :string})
     field(:map, :map)
-    field(:location, Geo.Geometry)
 
     embeds_one :data, Data, primary_key: false do
       field(:key1, :string)
