@@ -123,7 +123,7 @@ defmodule EctoTrail do
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
     Multi.new()
     |> Multi.insert(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :create)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :insert)
   end
 
   @doc """
@@ -232,7 +232,7 @@ defmodule EctoTrail do
 
   defp validate_changes(changes, schema, operation_type) do
     case operation_type do
-      :create ->
+      :insert ->
         # This case is true when the operation type is an insert operation.
         changes
 

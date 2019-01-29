@@ -16,7 +16,8 @@ defmodule EctoTrailTest do
                changeset: %{},
                actor_id: "cowboy",
                resource_id: ^resource_id,
-               resource: "resources"
+               resource: "resources",
+               change_type: :insert
              } = TestRepo.one(Changelog)
     end
 
@@ -35,7 +36,8 @@ defmodule EctoTrailTest do
                changeset: %{"name" => "My name"},
                actor_id: "cowboy",
                resource_id: ^resource_id,
-               resource: "resources"
+               resource: "resources",
+               change_type: :insert
              } = TestRepo.one(Changelog)
     end
 
@@ -54,7 +56,8 @@ defmodule EctoTrailTest do
                changeset: changes,
                actor_id: "cowboy",
                resource_id: ^resource_id,
-               resource: "resources"
+               resource: "resources",
+               change_type: :insert
              } = TestRepo.one(Changelog)
 
       assert %{} == changes
@@ -150,7 +153,8 @@ defmodule EctoTrailTest do
                changeset: %{"name" => "My new name"},
                actor_id: "cowboy",
                resource_id: ^resource_id,
-               resource: "resources"
+               resource: "resources",
+               change_type: :update
              } = TestRepo.one(Changelog)
     end
 
