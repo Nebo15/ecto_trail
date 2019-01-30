@@ -170,6 +170,7 @@ defmodule EctoTrailTest do
       assert [%{name: "name"}] = TestRepo.all(ResourcesSchema)
       assert [] == TestRepo.all(Changelog)
     end
+  end
 
   describe "upsert_and_log/3" do
     setup do
