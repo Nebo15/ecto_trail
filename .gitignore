@@ -34,6 +34,7 @@ GitHub.sublime-settings
 .tags_sorted_by_file
 .vagrant
 .DS_Store
+.elixir_ls
 
 # Ignore released binaries
 .deliver

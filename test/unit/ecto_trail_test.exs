@@ -13,11 +13,12 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :insert
+             } = TestRepo.one(Changelog)
     end
 
     test "logs changes when changeset is inserted" do
@@ -32,11 +33,12 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{"name" => "My name"},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{"name" => "My name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :insert
+             } = TestRepo.one(Changelog)
     end
 
     test "logs changes when changeset is empty" do
@@ -51,11 +53,12 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: changes,
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: changes,
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :insert
+             } = TestRepo.one(Changelog)
 
       assert %{} == changes
     end
@@ -65,21 +68,21 @@ defmodule EctoTrailTest do
         name: "My name",
         array: ["apple", "banana"],
         map: %{longitude: 50.45000, latitude: 30.52333},
-        location: %Geo.Point{coordinates: {49.44, 17.87}},
         data: %{key2: "key2"},
         category: %{"title" => "test"},
         comments: [
           %{"title" => "wow"},
-          %{"title" => "very impressive"},
+          %{"title" => "very impressive"}
         ],
         items: [
           %{name: "Morgan"},
           %{name: "Freeman"}
-        ]}
+        ]
+      }
 
       result =
         %ResourcesSchema{}
-        |> Changeset.cast(attrs, [:name, :array, :map, :location])
+        |> Changeset.cast(attrs, [:name, :array, :map])
         |> Changeset.cast_embed(:data, with: &ResourcesSchema.embed_changeset/2)
         |> Changeset.cast_embed(:items, with: &ResourcesSchema.embeds_many_changeset/2)
         |> Changeset.cast_assoc(:category)
@@ -92,30 +95,27 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: changes,
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: changes,
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources"
+             } = TestRepo.one(Changelog)
 
       assert %{
-        "name" => "My name",
-        "data" => %{"key2" => "key2"},
-        "category" => %{"title" => "test"},
-        "comments" => [
-          %{"title" => "wow"},
-          %{"title" => "very impressive"},
-        ],
-        "items" => [
-          %{"name" => "Morgan"},
-          %{"name" => "Freeman"}
-        ],
-        "location" => "%Geo.Point{coordinates: {49.44, 17.87}, srid: nil}",
-        "array" => ["apple", "banana"],
-        "map" => %{
-          "latitude" => 30.52333,
-          "longitude" => 50.45}
-        } == changes
+               "name" => "My name",
+               "data" => %{"key2" => "key2"},
+               "category" => %{"title" => "test"},
+               "comments" => [
+                 %{"title" => "wow"},
+                 %{"title" => "very impressive"}
+               ],
+               "items" => [
+                 %{"name" => "Morgan"},
+                 %{"name" => "Freeman"}
+               ],
+               "array" => ["apple", "banana"],
+               "map" => %{"latitude" => 30.52333, "longitude" => 50.45}
+             } == changes
     end
 
     test "returns error when changeset is invalid" do
@@ -150,11 +150,12 @@ defmodule EctoTrailTest do
       resource_id = to_string(resource.id)
 
       assert %{
-        changeset: %{"name" => "My new name"},
-        actor_id: "cowboy",
-        resource_id: ^resource_id,
-        resource: "resources"
-      } = TestRepo.one(Changelog)
+               changeset: %{"name" => "My new name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :update
+             } = TestRepo.one(Changelog)
     end
 
     test "returns error when changeset is invalid", %{schema: schema} do
@@ -168,6 +169,33 @@ defmodule EctoTrailTest do
 
       assert [%{name: "name"}] = TestRepo.all(ResourcesSchema)
       assert [] == TestRepo.all(Changelog)
+    end
+  end
+
+  describe "upsert_and_log/3" do
+    setup do
+      {:ok, schema} = TestRepo.insert(%ResourcesSchema{name: "name"})
+      {:ok, %{schema: schema}}
+    end
+
+    test "logs changes when changeset is inserted", %{schema: schema} do
+      result =
+        schema
+        |> Changeset.change(%{name: "My new name"})
+        |> TestRepo.upsert_and_log("cowboy")
+
+      assert {:ok, %ResourcesSchema{name: "My new name"}} = result
+
+      resource = TestRepo.one(ResourcesSchema)
+      resource_id = to_string(resource.id)
+
+      assert %{
+               changeset: %{"name" => "My new name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :upsert
+             } = TestRepo.one(Changelog)
     end
   end
 end

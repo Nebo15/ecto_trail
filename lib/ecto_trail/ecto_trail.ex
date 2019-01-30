@@ -56,10 +56,11 @@ defmodule EctoTrail do
 
       Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
       """
-      @spec insert_and_log(struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
-                           actor_id :: String.T,
-                           opts :: Keyword.t) ::
-            {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+      @spec insert_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
       def insert_and_log(struct_or_changeset, actor_id, opts \\ []),
         do: EctoTrail.insert_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
 
@@ -68,13 +69,43 @@ defmodule EctoTrail do
 
       Insert arguments, return and options same as `c:Ecto.Repo.update/2` has.
       """
-      @spec update_and_log(changeset :: Ecto.Changeset.t,
-                           actor_id :: String.T,
-                           opts :: Keyword.t) ::
-            {:ok, Ecto.Schema.t} |
-            {:error, Ecto.Changeset.t}
+      @spec update_and_log(
+              changeset :: Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
       def update_and_log(changeset, actor_id, opts \\ []),
         do: EctoTrail.update_and_log(__MODULE__, changeset, actor_id, opts)
+
+      @doc """
+      Call `c:Ecto.Repo.upsert/2` operation and store changes in a `change_log` table.
+
+      Insert arguments, return and options same as `c:Ecto.Repo.upsert/2` has.
+      """
+      @spec upsert_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
+      def upsert_and_log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.upsert_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
+
+      @doc """
+      Call `c:Ecto.Repo.delete/2` operation and store deleted objext in a `change_log` table.
+      """
+      @spec delete_and_log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) ::
+              {:ok, Ecto.Schema.t()}
+              | {:error, Ecto.Changeset.t()}
+      def delete_and_log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.delete_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
     end
   end
 
@@ -83,15 +114,16 @@ defmodule EctoTrail do
 
   Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
   """
-  @spec insert_and_log(repo :: Ecto.Repo.t,
-                       struct_or_changeset :: Ecto.Schema.t | Ecto.Changeset.t,
-                       actor_id :: String.T,
-                       opts :: Keyword.t) ::
-        {:ok, Ecto.Schema.t} | {:error, Ecto.Changeset.t}
+  @spec insert_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def insert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
-    Multi.new
+    Multi.new()
     |> Multi.insert(:operation, struct_or_changeset, opts)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :insert)
   end
 
   @doc """
@@ -99,31 +131,68 @@ defmodule EctoTrail do
 
   Insert arguments, return and options same as `c:Ecto.Repo.update/2` has.
   """
-  @spec update_and_log(repo :: Ecto.Repo.t,
-                       changeset :: Ecto.Changeset.t,
-                       actor_id :: String.T,
-                       opts :: Keyword.t) ::
-        {:ok, Ecto.Schema.t} |
-        {:error, Ecto.Changeset.t}
+  @spec update_and_log(
+          repo :: Ecto.Repo.t(),
+          changeset :: Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
   def update_and_log(repo, changeset, actor_id, opts \\ []) do
-    Multi.new
+    Multi.new()
     |> Multi.update(:operation, changeset, opts)
-    |> run_logging_transaction(repo, changeset, actor_id)
+    |> run_logging_transaction(repo, changeset, actor_id, :update)
   end
 
-  defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id) do
+  @doc """
+  Call `c:Ecto.Repo.upsert/2` operation and store changes in a `change_log` table.
+
+  Insert arguments, return and options same as `c:Ecto.Repo.upsert/2` has.
+  """
+  @spec upsert_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
+  def upsert_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new()
+    |> Multi.insert_or_update(:operation, struct_or_changeset, opts)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :upsert)
+  end
+
+  @doc """
+   Call `c:Ecto.Repo.delete/2` operation and store deleted objext in a `change_log` table.
+  """
+  @spec delete_and_log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) ::
+          {:ok, Ecto.Schema.t()}
+          | {:error, Ecto.Changeset.t()}
+  def delete_and_log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new()
+    |> Multi.delete(:operation, struct_or_changeset, opts)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :delete)
+  end
+
+  defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id, operation_type) do
     multi
-    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
+    |> Multi.run(:changelog, &log_changes(&1, &2, struct_or_changeset, actor_id, operation_type))
     |> repo.transaction()
     |> build_result()
   end
 
-  defp build_result({:ok, %{operation: operation}}),
-    do: {:ok, operation}
-  defp build_result({:error, :operation, reason, _changes_so_far}),
-    do: {:error, reason}
+  defp build_result({:ok, %{operation: operation}}), do: {:ok, operation}
 
-  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id) do
+  defp build_result({:error, :operation, reason, _changes_so_far}), do: {:error, reason}
+
+  defp log_changes(repo, multi_acc, struct_or_changeset, actor_id, operation_type) do
     %{operation: operation} = multi_acc
     associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
@@ -134,13 +203,15 @@ defmodule EctoTrail do
       |> get_changes()
       |> get_embed_changes(embeds)
       |> get_assoc_changes(associations)
+      |> validate_changes(struct_or_changeset, operation_type)
 
     result =
       %{
         actor_id: to_string(actor_id),
         resource: resource,
         resource_id: to_string(operation.id),
-        changeset: changes
+        changeset: changes,
+        change_type: operation_type
       }
       |> changelog_changeset()
       |> repo.insert()
@@ -148,25 +219,71 @@ defmodule EctoTrail do
     case result do
       {:ok, changelog} ->
         {:ok, changelog}
+
       {:error, reason} ->
-        Logger.error("Failed to store changes in audit log: #{inspect struct_or_changeset} " <>
-                     "by actor #{inspect actor_id}. Reason: #{inspect reason}")
+        Logger.error(
+          "Failed to store changes in audit log: #{inspect(struct_or_changeset)} " <>
+            "by actor #{inspect(actor_id)}. Reason: #{inspect(reason)}"
+        )
+
         {:ok, reason}
     end
   end
 
+  defp validate_changes(changes, schema, operation_type) do
+    case operation_type do
+      :insert ->
+        # This case is true when the operation type is an insert operation.
+        changes
+
+      :update ->
+        # This case is true when the operation type is an update operation.
+        changes
+
+      :delete ->
+        # This case is true when the operation type is an delete operation.
+        {_, return} =
+          Map.from_struct(schema)
+          |> Map.pop(:__meta__)
+
+        remove_empty_assosiations(return)
+
+      :upsert ->
+        # This case is true when the operation type is an upsert operation.
+        changes
+    end
+  end
+
+  defp remove_empty_assosiations(struct) do
+    Enum.map(struct, fn {key, value} ->
+      {key,
+       if String.contains?(Kernel.inspect(value), "Ecto.Association.NotLoaded") do
+         nil
+       else
+         value
+       end}
+    end)
+    |> Map.new()
+  end
+
   defp get_changes(%Changeset{changes: changes}),
     do: map_custom_ecto_types(changes)
+
   defp get_changes(changes) when is_map(changes),
     do: changes |> Changeset.change(%{}) |> get_changes()
+
   defp get_changes(changes) when is_list(changes),
-    do: changes |> Enum.map_reduce([], fn(ch, acc) -> {nil, List.insert_at(acc, -1, get_changes(ch))} end) |> elem(1)
+    do:
+      changes
+      |> Enum.map_reduce([], fn ch, acc -> {nil, List.insert_at(acc, -1, get_changes(ch))} end)
+      |> elem(1)
 
   defp get_embed_changes(changeset, embeds) do
     Enum.reduce(embeds, changeset, fn embed, changeset ->
       case Map.get(changeset, embed) do
         nil ->
           changeset
+
         embed_changes ->
           Map.put(changeset, embed, get_changes(embed_changes))
       end
@@ -178,6 +295,7 @@ defmodule EctoTrail do
       case Map.get(changeset, assoc) do
         nil ->
           changeset
+
         assoc_changes ->
           Map.put(changeset, assoc, get_changes(assoc_changes))
       end
@@ -205,6 +323,7 @@ defmodule EctoTrail do
       :resource,
       :resource_id,
       :changeset,
+      :change_type
     ])
   end
 end
