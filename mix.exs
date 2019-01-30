@@ -38,7 +38,8 @@ defmodule EctoTrail.Mixfile do
       {:geo, "~> 3.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.5.0", only: [:dev, :test]},
-      {:credo, ">= 0.5.1", only: [:dev, :test]}
+      {:credo, ">= 0.5.1", only: [:dev, :test]},
+      {:ecto_enum, "~> 1.0"},
     ]
   end
 
