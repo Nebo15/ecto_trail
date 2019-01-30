@@ -170,5 +170,31 @@ defmodule EctoTrailTest do
       assert [%{name: "name"}] = TestRepo.all(ResourcesSchema)
       assert [] == TestRepo.all(Changelog)
     end
+
+  describe "upsert_and_log/3" do
+    setup do
+      {:ok, schema} = TestRepo.insert(%ResourcesSchema{name: "name"})
+      {:ok, %{schema: schema}}
+    end
+
+    test "logs changes when changeset is inserted", %{schema: schema} do
+      result =
+        schema
+        |> Changeset.change(%{name: "My new name"})
+        |> TestRepo.upsert_and_log("cowboy")
+
+      assert {:ok, %ResourcesSchema{name: "My new name"}} = result
+
+      resource = TestRepo.one(ResourcesSchema)
+      resource_id = to_string(resource.id)
+
+      assert %{
+               changeset: %{"name" => "My new name"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :upsert
+             } = TestRepo.one(Changelog)
+    end
   end
 end
