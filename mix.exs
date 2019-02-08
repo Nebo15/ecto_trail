@@ -9,7 +9,7 @@ defmodule EctoTrail.Mixfile do
       description: description(),
       package: package(),
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [] ++ Mix.compilers(),
       build_embedded: Mix.env() == :prod,
