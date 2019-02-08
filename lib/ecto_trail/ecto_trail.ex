@@ -227,7 +227,7 @@ defmodule EctoTrail do
   end
 
   defp map_custom_ecto_types(changes) do
-    changes |> Enum.map(&map_custom_ecto_type/1) |> Enum.into(%{})
+    Enum.into(changes, %{}, &map_custom_ecto_type/1)
   end
 
   defp map_custom_ecto_type({_field, %Changeset{}} = input), do: input
