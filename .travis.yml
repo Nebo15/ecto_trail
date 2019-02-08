@@ -30,4 +30,4 @@ script:
   # Run static code analysis
   - mix credo --strict
   # Check code style
-  - mix dogma
+  - mix format --check-formatted

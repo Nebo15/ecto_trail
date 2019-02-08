@@ -40,7 +40,6 @@ defmodule EctoTrail.Mixfile do
       {:geo, "~> 1.4", only: [:dev, :test]},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.5.0", only: [:dev, :test]},
-      {:dogma, ">= 0.1.12", only: [:dev, :test]},
       {:credo, ">= 0.5.1", only: [:dev, :test]}
     ]
   end
