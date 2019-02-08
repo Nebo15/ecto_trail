@@ -2,7 +2,7 @@
 Postgrex.Types.define(
   EctoTrail.PostgresTypes,
   [Geo.PostGIS.Extension] ++ Ecto.Adapters.Postgres.extensions(),
-  json: Poison
+  json: Jason
 )
 
 Application.put_env(:ex_unit, :capture_log, true)
