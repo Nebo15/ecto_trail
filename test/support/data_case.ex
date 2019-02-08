@@ -14,6 +14,8 @@ defmodule EctoTrail.DataCase do
 
   use ExUnit.CaseTemplate
 
+  alias Ecto.Adapters.SQL.Sandbox
+
   using do
     quote do
       alias TestRepo
@@ -26,10 +28,12 @@ defmodule EctoTrail.DataCase do
   end
 
   setup tags do
-    :ok = Ecto.Adapters.SQL.Sandbox.checkout(TestRepo)
+    :ok = Sandbox.checkout(TestRepo)
+    :ok = Sandbox.checkout(TestRepoWithCustomSchema)
 
     unless tags[:async] do
-      Ecto.Adapters.SQL.Sandbox.mode(TestRepo, {:shared, self()})
+      Sandbox.mode(TestRepo, {:shared, self()})
+      Sandbox.mode(TestRepoWithCustomSchema, {:shared, self()})
     end
 
     :ok
