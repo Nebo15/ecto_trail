@@ -6,11 +6,11 @@ defmodule EctoTrail.Changelog do
 
   @primary_key {:id, :binary_id, autogenerate: true}
   schema Application.fetch_env!(:ecto_trail, :table_name) do
-    field :actor_id, :string
-    field :resource, :string
-    field :resource_id, :string
-    field :changeset, :map
+    field(:actor_id, :string)
+    field(:resource, :string)
+    field(:resource_id, :string)
+    field(:changeset, :map)
 
-    timestamps([type: :utc_datetime, updated_at: false])
+    timestamps(type: :utc_datetime, updated_at: false)
   end
 end
