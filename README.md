@@ -28,13 +28,16 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
     @moduledoc false
     use Ecto.Migration
 
-    def change do
-      create table(:audit_log, primary_key: false) do
-        add :id, :uuid, primary_key: true
+    @table_name String.to_atom(Application.fetch_env!(:ecto_trail, :table_name))
+
+    def change(table_name \\ @table_name) do
+      ChangeEnum.create_type
+      create table(table_name) do
         add :actor_id, :string, null: false
         add :resource, :string, null: false
         add :resource_id, :string, null: false
         add :changeset, :map, null: false
+        add(:change_type, :change)
 
         timestamps([type: :utc_datetime, updated_at: false])
       end
