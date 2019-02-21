@@ -31,7 +31,7 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
     @table_name String.to_atom(Application.fetch_env!(:ecto_trail, :table_name))
 
     def change(table_name \\ @table_name) do
-      ChangeEnum.create_type
+      EctoTrailChangeEnum.create_type
       create table(table_name) do
         add :actor_id, :string, null: false
         add :resource, :string, null: false
@@ -53,7 +53,7 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
     use EctoTrail
   end
   ```
-  
+
 5. Configure table name which is used to store audit log (in `config.ex`):
 
   ```elixir

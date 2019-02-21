@@ -9,7 +9,7 @@ defmodule EctoTrail.Changelog do
     field(:resource, :string)
     field(:resource_id, :string)
     field(:changeset, :map)
-    field(:change_type, ChangeEnum)
+    field(:change_type, EctoTrailChangeEnum)
 
     timestamps(type: :utc_datetime, updated_at: false)
   end

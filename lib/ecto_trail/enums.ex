@@ -1,2 +1,2 @@
 import EctoEnum
-defenum(ChangeEnum, :change, [:insert, :delete, :update, :upsert])
+defenum(EctoTrailChangeEnum, :change, [:insert, :delete, :update, :upsert])
