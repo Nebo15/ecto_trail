@@ -5,14 +5,16 @@ defmodule EctoTrail.TestRepo.Migrations.CreateAuditLogTable do
   @table_name String.to_atom(Application.fetch_env!(:ecto_trail, :table_name))
 
   def change(table_name \\ @table_name) do
-    create table(table_name, primary_key: false) do
-      add :id, :uuid, primary_key: true
-      add :actor_id, :string, null: false
-      add :resource, :string, null: false
-      add :resource_id, :string, null: false
-      add :changeset, :map, null: false
+    IO.inspect(table_name, label: :table_name)
 
-      timestamps([type: :utc_datetime, updated_at: false])
+    create table(table_name, primary_key: false) do
+      add(:id, :uuid, primary_key: true)
+      add(:actor_id, :string, null: false)
+      add(:resource, :string, null: false)
+      add(:resource_id, :string, null: false)
+      add(:changeset, :map, null: false)
+
+      timestamps(type: :utc_datetime, updated_at: false)
     end
   end
 end
