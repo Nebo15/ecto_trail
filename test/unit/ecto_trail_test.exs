@@ -111,7 +111,8 @@ defmodule EctoTrailTest do
                  %{"name" => "Morgan"},
                  %{"name" => "Freeman"}
                ],
-               "location" => "%Geo.Point{coordinates: {49.44, 17.87}, srid: nil}",
+               "location" =>
+                 "%Geo.Point{coordinates: {49.44, 17.87}, properties: %{}, srid: nil}",
                "array" => ["apple", "banana"],
                "map" => %{"latitude" => 30.52333, "longitude" => 50.45}
              } == changes

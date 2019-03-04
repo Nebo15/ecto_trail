@@ -143,7 +143,9 @@ defmodule EctoTrail do
 
   defp run_logging_transaction(multi, repo, struct_or_changeset, actor_id) do
     multi
-    |> Multi.run(:changelog, &log_changes(repo, &1, struct_or_changeset, actor_id))
+    |> Multi.run(:changelog, fn repo, acc ->
+      log_changes(repo, acc, struct_or_changeset, actor_id)
+    end)
     |> repo.transaction()
     |> build_result()
   end

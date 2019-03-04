@@ -5,26 +5,6 @@ Postgrex.Types.define(
   json: Jason
 )
 
-Application.put_env(:ex_unit, :capture_log, true)
-
-Application.put_env(:ecto_trail, TestRepo,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  database: "ecto_trail_test",
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  types: EctoTrail.PostgresTypes
-)
-
-Application.put_env(:ecto_trail, TestRepoWithCustomSchema,
-  pool: Ecto.Adapters.SQL.Sandbox,
-  database: "ecto_trail_test",
-  username: "postgres",
-  password: "postgres",
-  hostname: "localhost",
-  types: EctoTrail.PostgresTypes
-)
-
 defmodule TestRepo do
   use Ecto.Repo,
     otp_app: :ecto_trail,
@@ -89,7 +69,7 @@ defmodule ResourcesSchema do
     field(:name, :string)
     field(:array, {:array, :string})
     field(:map, :map)
-    field(:location, Geo.Geometry)
+    field(:location, Geo.PostGIS.Geometry)
 
     embeds_one :data, Data, primary_key: false do
       field(:key1, :string)
@@ -131,3 +111,6 @@ Ecto.Migrator.run(TestRepo, migrations_path, :up, all: true)
 
 # Start ExUnit
 ExUnit.start()
+
+Ecto.Adapters.SQL.Sandbox.mode(TestRepo, :manual)
+Ecto.Adapters.SQL.Sandbox.mode(TestRepoWithCustomSchema, :manual)
