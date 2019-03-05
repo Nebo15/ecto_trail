@@ -9,7 +9,7 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
 
   ```elixir
   def deps do
-    [{:ecto_trail, "~> 0.2.0"}]
+    [{:ecto_trail, "~> 0.4.0"}]
   end
   ```
 
@@ -50,7 +50,7 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
     use EctoTrail
   end
   ```
-  
+
 5. Configure table name which is used to store audit log (in `config.ex`):
 
   ```elixir
@@ -62,4 +62,3 @@ EctoTrail allows to store changeset changes into a separate `audit_log` table.
 ## Docs
 
 The docs can be found at [https://hexdocs.pm/ecto_trail](https://hexdocs.pm/ecto_trail).
-
