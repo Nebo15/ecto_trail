@@ -11,6 +11,6 @@ defmodule EctoTrail.Changelog do
     field(:resource_id, :string)
     field(:changeset, :map)
 
-    timestamps(type: :utc_datetime, updated_at: false)
+    timestamps(type: :utc_datetime_usec, updated_at: false)
   end
 end
