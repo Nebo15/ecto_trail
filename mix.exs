@@ -35,7 +35,6 @@ defmodule EctoTrail.Mixfile do
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.14.0"},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
-      {:geo, "~> 3.0.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.5.0", only: [:dev, :test]},
       {:credo, ">= 0.5.1", only: [:dev, :test]},

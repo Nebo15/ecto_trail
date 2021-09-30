@@ -20,7 +20,7 @@ defmodule Comment do
 
   schema "comments" do
     field(:title, :string)
-    belongs_to(:resource, ResourcesSchema)
+    belongs_to(:resource, Resource)
   end
 
   def changeset(%Comment{} = schema, attrs) do
@@ -33,7 +33,7 @@ defmodule Category do
 
   schema "categories" do
     field(:title, :string)
-    belongs_to(:resource, ResourcesSchema)
+    belongs_to(:resource, Resource)
   end
 
   def changeset(%Category{} = schema, attrs) do
@@ -41,7 +41,7 @@ defmodule Category do
   end
 end
 
-defmodule ResourcesSchema do
+defmodule Resource do
   @moduledoc false
   use Ecto.Schema
 
