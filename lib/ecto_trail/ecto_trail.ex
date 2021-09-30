@@ -256,17 +256,23 @@ defmodule EctoTrail do
   end
 
   defp redact_custom_fields(changeset) do
-    redacted_fields = Application.fetch_env!(:ecto_trail, :redacted_fields)
+    redacted_fields = Application.fetch_env(:ecto_trail, :redacted_fields)
 
-    Enum.map(changeset, fn {key, value} ->
-      {key,
-       if Enum.member?(redacted_fields, key) do
-         "[REDACTED]"
-       else
-         value
-       end}
-    end)
-    |> Map.new()
+    if redacted_fields == :error do
+      changeset
+    else
+      {:ok, redacted_fields} = redacted_fields
+
+      Enum.map(changeset, fn {key, value} ->
+        {key,
+         if Enum.member?(redacted_fields, key) do
+           "[REDACTED]"
+         else
+           value
+         end}
+      end)
+      |> Map.new()
+    end
   end
 
   defp remove_empty_assosiations(struct) do
