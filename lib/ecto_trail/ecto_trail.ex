@@ -203,6 +203,7 @@ defmodule EctoTrail do
       |> get_changes()
       |> get_embed_changes(embeds)
       |> get_assoc_changes(associations)
+      |> redact_custom_fields()
       |> validate_changes(struct_or_changeset, operation_type)
 
     result =
@@ -252,6 +253,20 @@ defmodule EctoTrail do
         # This case is true when the operation type is an upsert operation.
         changes
     end
+  end
+
+  defp redact_custom_fields(changeset) do
+    redacted_fields = Application.fetch_env!(:ecto_trail, :redacted_fields)
+
+    Enum.map(changeset, fn {key, value} ->
+      {key,
+       if Enum.member?(redacted_fields, key) do
+         "[REDACTED]"
+       else
+         value
+       end}
+    end)
+    |> Map.new()
   end
 
   defp remove_empty_assosiations(struct) do

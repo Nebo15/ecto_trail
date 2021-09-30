@@ -41,6 +41,25 @@ defmodule EctoTrailTest do
              } = TestRepo.one(Changelog)
     end
 
+    test "logs changes with redacted field when changeset is inserted" do
+      result =
+        %Resource{}
+        |> Changeset.change(%{name: "My password Redacted", password: "secret"})
+        |> TestRepo.insert_and_log("cowboy")
+
+      assert {:ok, %Resource{name: "My password Redacted", password: "secret"}} = result
+      resource = TestRepo.one(Resource)
+      resource_id = to_string(resource.id)
+
+      assert %{
+               changeset: %{"name" => "My password Redacted", "password" => "[REDACTED]"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :insert
+             } = TestRepo.one(Changelog)
+    end
+
     test "logs changes when changeset is empty" do
       result =
         %Resource{}

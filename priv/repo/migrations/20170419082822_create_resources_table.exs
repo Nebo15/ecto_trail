@@ -5,6 +5,7 @@ defmodule EctoTrail.TestRepo.Migrations.CreateResourcesTable do
   def change do
     create table(:resources) do
       add :name, :string
+      add :password, :string
       add :data, :map
 
       timestamps()

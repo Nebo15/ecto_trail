@@ -47,6 +47,7 @@ defmodule Resource do
 
   schema "resources" do
     field(:name, :string)
+    field(:password, :string)
     field(:array, {:array, :string})
     field(:map, :map)
 
