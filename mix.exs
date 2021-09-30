@@ -9,7 +9,7 @@ defmodule EctoTrail.Mixfile do
       description: description(),
       package: package(),
       version: @version,
-      elixir: "~> 1.4",
+      elixir: "~> 1.6",
       elixirc_paths: elixirc_paths(Mix.env()),
       compilers: [] ++ Mix.compilers(),
       build_embedded: Mix.env() == :prod,
@@ -34,7 +34,7 @@ defmodule EctoTrail.Mixfile do
     [
       {:ecto_sql, "~> 3.0"},
       {:postgrex, ">= 0.14.0"},
-      {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
+      {:dialyxir, "~> 1.1", only: [:dev, :test], runtime: false},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
       {:excoveralls, ">= 0.5.0", only: [:dev, :test]},
       {:credo, ">= 0.5.1", only: [:dev, :test]},
