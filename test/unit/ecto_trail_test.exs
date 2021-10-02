@@ -6,10 +6,10 @@ defmodule EctoTrailTest do
 
   describe "insert_and_log/3" do
     test "logs changes when schema is inserted" do
-      result = TestRepo.insert_and_log(%ResourcesSchema{name: "name"}, "cowboy")
-      assert {:ok, %ResourcesSchema{name: "name"}} = result
+      result = TestRepo.insert_and_log(%Resource{name: "name"}, "cowboy")
+      assert {:ok, %Resource{name: "name"}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
@@ -23,13 +23,13 @@ defmodule EctoTrailTest do
 
     test "logs changes when changeset is inserted" do
       result =
-        %ResourcesSchema{}
+        %Resource{}
         |> Changeset.change(%{name: "My name"})
         |> TestRepo.insert_and_log("cowboy")
 
-      assert {:ok, %ResourcesSchema{name: "My name"}} = result
+      assert {:ok, %Resource{name: "My name"}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
@@ -41,15 +41,34 @@ defmodule EctoTrailTest do
              } = TestRepo.one(Changelog)
     end
 
+    test "logs changes with redacted field when changeset is inserted" do
+      result =
+        %Resource{}
+        |> Changeset.change(%{name: "My password Redacted", password: "secret"})
+        |> TestRepo.insert_and_log("cowboy")
+
+      assert {:ok, %Resource{name: "My password Redacted", password: "secret"}} = result
+      resource = TestRepo.one(Resource)
+      resource_id = to_string(resource.id)
+
+      assert %{
+               changeset: %{"name" => "My password Redacted", "password" => "[REDACTED]"},
+               actor_id: "cowboy",
+               resource_id: ^resource_id,
+               resource: "resources",
+               change_type: :insert
+             } = TestRepo.one(Changelog)
+    end
+
     test "logs changes when changeset is empty" do
       result =
-        %ResourcesSchema{}
+        %Resource{}
         |> Changeset.change(%{})
         |> TestRepo.insert_and_log("cowboy")
 
-      assert {:ok, %ResourcesSchema{name: nil}} = result
+      assert {:ok, %Resource{name: nil}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
@@ -81,17 +100,17 @@ defmodule EctoTrailTest do
       }
 
       result =
-        %ResourcesSchema{}
+        %Resource{}
         |> Changeset.cast(attrs, [:name, :array, :map])
-        |> Changeset.cast_embed(:data, with: &ResourcesSchema.embed_changeset/2)
-        |> Changeset.cast_embed(:items, with: &ResourcesSchema.embeds_many_changeset/2)
+        |> Changeset.cast_embed(:data, with: &Resource.embed_changeset/2)
+        |> Changeset.cast_embed(:items, with: &Resource.embeds_many_changeset/2)
         |> Changeset.cast_assoc(:category)
         |> Changeset.cast_assoc(:comments)
         |> TestRepo.insert_and_log("cowboy")
 
-      assert {:ok, %ResourcesSchema{name: "My name"}} = result
+      assert {:ok, %Resource{name: "My name"}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
@@ -120,21 +139,21 @@ defmodule EctoTrailTest do
 
     test "returns error when changeset is invalid" do
       changeset =
-        %ResourcesSchema{}
+        %Resource{}
         |> Changeset.change(%{name: "My name"})
         |> Changeset.add_error(:name, "invalid")
 
       result = TestRepo.insert_and_log(changeset, "cowboy")
       assert {:error, %Changeset{valid?: false}} = result
 
-      assert [] == TestRepo.all(ResourcesSchema)
+      assert [] == TestRepo.all(Resource)
       assert [] == TestRepo.all(Changelog)
     end
   end
 
   describe "update_and_log/3" do
     setup do
-      {:ok, schema} = TestRepo.insert(%ResourcesSchema{name: "name"})
+      {:ok, schema} = TestRepo.insert(%Resource{name: "name"})
       {:ok, %{schema: schema}}
     end
 
@@ -144,9 +163,9 @@ defmodule EctoTrailTest do
         |> Changeset.change(%{name: "My new name"})
         |> TestRepo.update_and_log("cowboy")
 
-      assert {:ok, %ResourcesSchema{name: "My new name"}} = result
+      assert {:ok, %Resource{name: "My new name"}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
@@ -167,14 +186,14 @@ defmodule EctoTrailTest do
       result = TestRepo.update_and_log(changeset, "cowboy")
       assert {:error, %Changeset{valid?: false}} = result
 
-      assert [%{name: "name"}] = TestRepo.all(ResourcesSchema)
+      assert [%{name: "name"}] = TestRepo.all(Resource)
       assert [] == TestRepo.all(Changelog)
     end
   end
 
   describe "upsert_and_log/3" do
     setup do
-      {:ok, schema} = TestRepo.insert(%ResourcesSchema{name: "name"})
+      {:ok, schema} = TestRepo.insert(%Resource{name: "name"})
       {:ok, %{schema: schema}}
     end
 
@@ -184,9 +203,9 @@ defmodule EctoTrailTest do
         |> Changeset.change(%{name: "My new name"})
         |> TestRepo.upsert_and_log("cowboy")
 
-      assert {:ok, %ResourcesSchema{name: "My new name"}} = result
+      assert {:ok, %Resource{name: "My new name"}} = result
 
-      resource = TestRepo.one(ResourcesSchema)
+      resource = TestRepo.one(Resource)
       resource_id = to_string(resource.id)
 
       assert %{
