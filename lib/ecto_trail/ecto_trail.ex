@@ -198,6 +198,13 @@ defmodule EctoTrail do
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
 
+    struct_or_changeset =
+      if operation_type == :delete and struct_or_changeset.__struct__ == Ecto.Changeset do
+        struct_or_changeset.data
+      else
+        struct_or_changeset
+      end
+
     changes =
       struct_or_changeset
       |> get_changes()
