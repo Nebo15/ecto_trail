@@ -1,7 +1,7 @@
 defmodule EctoTrail.Mixfile do
   use Mix.Project
 
-  @version "0.4.3"
+  @version "0.4.4"
 
   def project do
     [
@@ -35,7 +35,7 @@ defmodule EctoTrail.Mixfile do
   defp deps do
     [
       {:ecto_sql, "~> 3.7.0"},
-      {:postgrex, "~> 0.15.10", optional: true},
+      {:postgrex, "~> 0.15.0 or ~> 0.16.0", optional: true},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:geo_postgis, "~> 3.1.0", only: [:dev, :test]},
       {:ex_doc, ">= 0.15.0", only: [:dev, :test]},
