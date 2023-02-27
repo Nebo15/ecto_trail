@@ -34,7 +34,7 @@ defmodule EctoTrail.Mixfile do
 
   defp deps do
     [
-      {:ecto_sql, "~> 3.7.0"},
+      {:ecto_sql, "~> 3.9.0"},
       {:postgrex, "~> 0.15.0 or ~> 0.16.0", optional: true},
       {:dialyxir, "~> 0.5", only: [:dev, :test], runtime: false},
       {:geo_postgis, "~> 3.1.0", only: [:dev, :test]},
