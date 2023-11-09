@@ -52,6 +52,19 @@ defmodule EctoTrail do
   defmacro __using__(_) do
     quote do
       @doc """
+      Store changes in a `change_log` table.
+
+      Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
+      """
+      @spec log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+      def log(struct_or_changeset, actor_id, opts \\ []),
+        do: EctoTrail.log(__MODULE__, struct_or_changeset, actor_id, opts)
+
+      @doc """
       Call `c:Ecto.Repo.insert/2` operation and store changes in a `change_log` table.
 
       Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
@@ -107,6 +120,25 @@ defmodule EctoTrail do
       def delete_and_log(struct_or_changeset, actor_id, opts \\ []),
         do: EctoTrail.delete_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
     end
+  end
+
+  @doc """
+  Store changes in a `change_log` table.
+
+  Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
+  """
+  @spec log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  def log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    Multi.new()
+    # |> Multi.insert(:operation, struct_or_changeset, opts)
+    #    {:ok, struct_or_changeset}
+    |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct_or_changeset} end)
+    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :insert)
   end
 
   @doc """
