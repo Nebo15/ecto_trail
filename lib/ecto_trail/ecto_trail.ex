@@ -57,12 +57,13 @@ defmodule EctoTrail do
       Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
       """
       @spec log(
-              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
-              actor_id :: String.T,
-              opts :: Keyword.t()
-            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-      def log(struct_or_changeset, actor_id, opts \\ []),
-        do: EctoTrail.log(__MODULE__, struct_or_changeset, actor_id, opts)
+        struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+        changes :: Map.t(),
+        actor_id :: String.T,
+        opts :: Keyword.t()
+      ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+      def log(struct_or_changeset, changes, actor_id, opts \\ []),
+        do: EctoTrail.log(__MODULE__, struct_or_changeset, changes, actor_id, opts)
 
       @doc """
       Call `c:Ecto.Repo.insert/2` operation and store changes in a `change_log` table.
@@ -128,17 +129,18 @@ defmodule EctoTrail do
   Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
   """
   @spec log(
-          repo :: Ecto.Repo.t(),
-          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
-          actor_id :: String.T,
-          opts :: Keyword.t()
-        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
-  def log(repo, struct_or_changeset, actor_id, opts \\ []) do
+    repo :: Ecto.Repo.t(),
+    struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+    changes :: Map.t(),
+    actor_id :: String.T,
+    opts :: Keyword.t()
+  ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  def log(repo, struct_or_changeset, changes, actor_id, opts \\ []) do
     Multi.new()
     # |> Multi.insert(:operation, struct_or_changeset, opts)
     #    {:ok, struct_or_changeset}
     |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct_or_changeset} end)
-    |> run_logging_transaction(repo, struct_or_changeset, actor_id, :insert)
+    |> run_logging_transaction_alone(repo, struct_or_changeset, changes, actor_id, :insert)
   end
 
   @doc """
@@ -220,9 +222,55 @@ defmodule EctoTrail do
     |> build_result()
   end
 
+  defp run_logging_transaction_alone(multi, repo, struct_or_changeset, changes, actor_id, operation_type) do
+    multi
+    |> Multi.run(:changelog, &log_changes_alone(&1, &2, struct_or_changeset, changes, actor_id, operation_type))
+    |> repo.transaction()
+    |> build_result()
+  end
+
   defp build_result({:ok, %{operation: operation}}), do: {:ok, operation}
 
   defp build_result({:error, :operation, reason, _changes_so_far}), do: {:error, reason}
+
+  defp log_changes_alone(repo, multi_acc, struct_or_changeset, changes, actor_id, operation_type) do
+    %{operation: operation} = multi_acc
+    associations = operation.__struct__.__schema__(:associations)
+    resource = operation.__struct__.__schema__(:source)
+    embeds = operation.__struct__.__schema__(:embeds)
+
+    struct_or_changeset =
+      if operation_type == :delete and struct_or_changeset.__struct__ == Ecto.Changeset do
+        struct_or_changeset.data
+      else
+        struct_or_changeset
+      end
+
+    result =
+      %{
+        actor_id: to_string(actor_id),
+        resource: resource,
+        resource_id: to_string(operation.id),
+        changeset: changes,
+        change_type: operation_type
+      }
+      |> changelog_changeset()
+      |> repo.insert()
+
+    case result do
+      {:ok, changelog} ->
+        {:ok, changelog}
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to store changes in audit log: #{inspect(struct_or_changeset)} " <>
+            "by actor #{inspect(actor_id)}. Reason: #{inspect(reason)}"
+        )
+
+        {:ok, reason}
+    end
+  end
+
 
   defp log_changes(repo, multi_acc, struct_or_changeset, actor_id, operation_type) do
     %{operation: operation} = multi_acc
