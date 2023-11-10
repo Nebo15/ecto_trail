@@ -165,8 +165,8 @@ defmodule EctoTrail do
     Enum.zip(structs, changes)
     |> Enum.each(fn {struct, change} ->
       Multi.new()
-      |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct_or_changeset} end)
-      |> run_logging_transaction_alone(repo, struct_or_changeset, changes, actor_id, :insert)
+      |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct} end)
+      |> run_logging_transaction_alone(repo, struct, change, actor_id, :insert)
     end)
   end
 
