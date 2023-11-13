@@ -145,8 +145,6 @@ defmodule EctoTrail do
         ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
   def log(repo, struct_or_changeset, changes, actor_id, opts \\ []) do
     Multi.new()
-    # |> Multi.insert(:operation, struct_or_changeset, opts)
-    #    {:ok, struct_or_changeset}
     |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct_or_changeset} end)
     |> run_logging_transaction_alone(repo, struct_or_changeset, changes, actor_id, :insert)
   end
@@ -249,11 +247,11 @@ defmodule EctoTrail do
     |> build_result()
   end
 
-  defp run_logging_transaction_alone(multi, repo, struct_or_changeset, changes, actor_id, operation_type) do
+  defp run_logging_transaction_alone(multi, repo, struct, changes, actor_id, operation_type) do
     multi
     |> Multi.run(
       :changelog,
-      &log_changes_alone(&1, &2, struct_or_changeset, changes, actor_id, operation_type)
+      &log_changes_alone(&1, &2, struct, changes, actor_id, operation_type)
     )
     |> repo.transaction()
     |> build_result()
@@ -268,13 +266,6 @@ defmodule EctoTrail do
     associations = operation.__struct__.__schema__(:associations)
     resource = operation.__struct__.__schema__(:source)
     embeds = operation.__struct__.__schema__(:embeds)
-
-    struct_or_changeset =
-      if operation_type == :delete and struct_or_changeset.__struct__ == Ecto.Changeset do
-        struct_or_changeset.data
-      else
-        struct_or_changeset
-      end
 
     result =
       %{
