@@ -52,6 +52,30 @@ defmodule EctoTrail do
   defmacro __using__(_) do
     quote do
       @doc """
+      Store changes in a `change_log` table.
+      """
+      @spec log(
+              struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+              changes :: Map.t(),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+      def log(struct_or_changeset, changes, actor_id, opts \\ []),
+        do: EctoTrail.log(__MODULE__, struct_or_changeset, changes, actor_id, opts)
+
+      @doc """
+      Store bulk changes in a `change_log` table.
+      """
+      @spec log_bulk(
+              structs :: list(Ecto.Schema.t()),
+              changes :: list(Map.t()),
+              actor_id :: String.T,
+              opts :: Keyword.t()
+            ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+      def log_bulk(structs, changes, actor_id, opts \\ []),
+        do: EctoTrail.log_bulk(__MODULE__, structs, changes, actor_id, opts)
+
+      @doc """
       Call `c:Ecto.Repo.insert/2` operation and store changes in a `change_log` table.
 
       Insert arguments, return and options same as `c:Ecto.Repo.insert/2` has.
@@ -107,6 +131,41 @@ defmodule EctoTrail do
       def delete_and_log(struct_or_changeset, actor_id, opts \\ []),
         do: EctoTrail.delete_and_log(__MODULE__, struct_or_changeset, actor_id, opts)
     end
+  end
+
+  @doc """
+  Store changes in a `change_log` table.
+  """
+  @spec log(
+          repo :: Ecto.Repo.t(),
+          struct_or_changeset :: Ecto.Schema.t() | Ecto.Changeset.t(),
+          changes :: Map.t(),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  def log(repo, struct_or_changeset, changes, actor_id, opts \\ []) do
+    Multi.new()
+    |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct_or_changeset} end)
+    |> run_logging_transaction_alone(repo, struct_or_changeset, changes, actor_id, :insert)
+  end
+
+  @doc """
+  Store bulk changes in a `change_log` table.
+  """
+  @spec log_bulk(
+          repo :: Ecto.Repo.t(),
+          structs :: list(Ecto.Schema.t()),
+          changes :: list(Map.t()),
+          actor_id :: String.T,
+          opts :: Keyword.t()
+        ) :: {:ok, Ecto.Schema.t()} | {:error, Ecto.Changeset.t()}
+  def log_bulk(repo, structs, changes, actor_id, opts \\ []) do
+    Enum.zip(structs, changes)
+    |> Enum.each(fn {struct, change} ->
+      Multi.new()
+      |> Ecto.Multi.run(:operation, fn _, _ -> {:ok, struct} end)
+      |> run_logging_transaction_alone(repo, struct, change, actor_id, :insert)
+    end)
   end
 
   @doc """
@@ -188,9 +247,50 @@ defmodule EctoTrail do
     |> build_result()
   end
 
+  defp run_logging_transaction_alone(multi, repo, struct, changes, actor_id, operation_type) do
+    multi
+    |> Multi.run(
+      :changelog,
+      &log_changes_alone(&1, &2, struct, changes, actor_id, operation_type)
+    )
+    |> repo.transaction()
+    |> build_result()
+  end
+
   defp build_result({:ok, %{operation: operation}}), do: {:ok, operation}
 
   defp build_result({:error, :operation, reason, _changes_so_far}), do: {:error, reason}
+
+  defp log_changes_alone(repo, multi_acc, struct_or_changeset, changes, actor_id, operation_type) do
+    %{operation: operation} = multi_acc
+    associations = operation.__struct__.__schema__(:associations)
+    resource = operation.__struct__.__schema__(:source)
+    embeds = operation.__struct__.__schema__(:embeds)
+
+    result =
+      %{
+        actor_id: to_string(actor_id),
+        resource: resource,
+        resource_id: to_string(operation.id),
+        changeset: changes,
+        change_type: operation_type
+      }
+      |> changelog_changeset()
+      |> repo.insert()
+
+    case result do
+      {:ok, changelog} ->
+        {:ok, changelog}
+
+      {:error, reason} ->
+        Logger.error(
+          "Failed to store changes in audit log: #{inspect(struct_or_changeset)} " <>
+            "by actor #{inspect(actor_id)}. Reason: #{inspect(reason)}"
+        )
+
+        {:ok, reason}
+    end
+  end
 
   defp log_changes(repo, multi_acc, struct_or_changeset, actor_id, operation_type) do
     %{operation: operation} = multi_acc
